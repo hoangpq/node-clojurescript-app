@@ -11,5 +11,5 @@
 
 
 # Routing
-1. /user/:name
-2. /fact/:number -> To calculate factorial
+1. `/user/:name`
+2. `/fact/:number -> To calculate factorial`
