@@ -1,0 +1,16 @@
+{
+  "name": "node-clj",
+  "version": "0.1.0",
+  "private": true,
+  "engines": {
+    "node": "10.x"
+  },
+  "main": "server.js",
+  "dependencies": {
+    "express": "^4.17.1"
+  },
+  "devDependencies": {
+    "source-map-support": "^0.4.15",
+    "ws": "^7.1.2"
+  }
+}
