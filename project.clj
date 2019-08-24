@@ -8,7 +8,8 @@
                  [org.clojure/clojurescript "1.9.908"]]
 
   :plugins [[lein-cljsbuild "1.1.7" :exclusions [[org.clojure/clojure]]]
-            [lein-figwheel "0.5.13"]]
+            [lein-figwheel "0.5.13"]
+            [lein-cljfmt "0.6.4"]]
 
   :source-paths ["src"]
 
