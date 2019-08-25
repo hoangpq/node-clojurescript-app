@@ -28,8 +28,18 @@
     (if (zero? (int number2)) (. res (send "Divide by zero!"))
         (. res (send (str (/ (int number1) (int number2))))))))
 
+(defn sse [_ res]
+  (. res (set (js-obj "Cache-Control" "no-cache" "Content-Type" "text/event-stream")))
+  (js/setTimeout (fn [] (doto res
+                          (.write "event: ping\n")
+                          (.write (gstring/format "data: {\"count\": %d}" count))
+                          (.write "\n\n")
+                          (.end))) 4000))
+
 (. app (get "/hello"
-            (fn [_ res] (. res (send "Hello world")))))
+            (fn [_ res] (js/setTimeout (fn [] (. res (send "Hello ClojureScript!"))) 1000))))
+
+(. app (get "/sse" sse))
 
 (. app (get "/user/:name"
             (fn [req res] (. res (send (req-params req "name"))))))
