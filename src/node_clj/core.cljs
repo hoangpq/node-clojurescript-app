@@ -1,6 +1,7 @@
 (ns node-clj.core
   (:require [cljs.nodejs :as nodejs]
             [goog.string :as gstring]
+            [node-clj.util :as util]
             goog.string.format))
 
 (nodejs/enable-util-print!)
@@ -8,51 +9,30 @@
 (defonce express (nodejs/require "express"))
 (defonce server-port 3000)
 
-;; app gets redefined on reload
 (def app (express))
 
-;; req.params[key]
-(defn req-params [req key]
-  (aget req "params" key))
-
-(defn factorial [n]
-  (loop [current n fact 1]
-    (if (= current 1)
-      fact
-      (recur (dec current) (* fact current)))))
-
-(defn divide [req res]
-  (let [p (aget req "params")
-        number1 (aget p "number1")
-        number2 (aget p "number2")]
-    (if (zero? (int number2)) (. res (send "Divide by zero!"))
-        (. res (send (str (/ (int number1) (int number2))))))))
-
-(defn sse [_ res]
+(defn sse [req res]
   (. res (set (js-obj "Cache-Control" "no-cache" "Content-Type" "text/event-stream")))
-  (js/setTimeout (fn [] (doto res
-                          (.write "event: ping\n")
-                          (.write (gstring/format "data: {\"count\": %d}" count))
-                          (.write "\n\n")
-                          (.end))) 4000))
+  (if-not (aget req "count") (aset req "count" 1))
+  (let [time (. js/Date now)]
+    (js/setTimeout (fn [] (doto res
+                            (.write "event: ping\n")
+                            (.write (gstring/format "data: {\"time\": %d}" time))
+                            (.write "\n\n")
+                            (.end))) 4000)))
 
-(. app (get "/hello"
-            (fn [_ res] (js/setTimeout (fn [] (. res (send "Hello ClojureScript!"))) 1000))))
+(defn query [req res]
+  (util/connect-postgres (aget req "query" "q") (fn [row] (. res (json row)))))
 
-(. app (get "/sse" sse))
+(defn factorial [req res]
+  (let [number (int (aget req "params" "number"))
+        fact (util/factorial number)]
+    (. res (send (gstring/format "Factorial(%d) = %d" number fact)))))
 
-(. app (get "/user/:name"
-            (fn [req res] (. res (send (req-params req "name"))))))
-
-(. app (get "/fact/:number"
-            (fn [req res]
-              (let [number (int (req-params req "number"))
-                    fact (factorial number)]
-                (. res (send (gstring/format "Factorial(%d) = %d" number fact)))))))
-
-(. app (get "/divide/:number1/:number2" divide))
-
-(def -main
-  (.listen app server-port (fn [] (println (gstring/format "Server is running on port %d" server-port)))))
+(defn -main []
+  (. app (get "/hello" (fn [_ res] (js/setTimeout (fn [] (. res (send "ClojureScript!"))) 1000))))
+  (. app (get "/query" query))
+  (. app (get "/fact/:number" factorial))
+  (. app (listen server-port (fn [] (println (gstring/format "Server is running on port %d" server-port))))))
 
 (set! *main-cli-fn* -main)
