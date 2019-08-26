@@ -34,7 +34,12 @@
                 :output-to "server.js"
                 :output-dir "target/js/compiled/prod"
                 :target :nodejs
-                :optimizations :simple}}]}
+                :optimizations :simple
+                :fn-invoke-direct true
+                :optimize-constants true
+                :hashbang false
+                :parallel-build true
+                :pretty-print  false}}]}
 
   :profiles {:dev {:dependencies [[figwheel-sidecar "0.5.13"]
                                   [com.cemerick/piggieback "0.2.2"]]
