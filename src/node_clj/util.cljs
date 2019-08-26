@@ -4,7 +4,7 @@
 (defonce pg (nodejs/require "pg"))
 
 (def Pool (aget pg "Pool"))
-(def pool (Pool. (js-obj "connectionString" "postgresql://odoo:odoo@localhost:5432/odoo12")))
+(def pool (Pool. (js-obj "connectionString" "postgresql://x:x@localhost:5432/x")))
 
 (defn factorial [n]
   (loop [current n fact 1]
