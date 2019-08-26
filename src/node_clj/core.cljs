@@ -22,7 +22,8 @@
                             (.end))) 4000)))
 
 (defn query [req res]
-  (util/connect-postgres (aget req "query" "q") (fn [row] (. res (json row)))))
+  (util/query (aget req "query" "q")
+              (fn [err result] (if-not err (. res (json result)) (. res (json err))))))
 
 (defn factorial [req res]
   (let [number (int (aget req "params" "number"))
@@ -32,6 +33,7 @@
 (defn -main []
   (. app (get "/hello" (fn [_ res] (js/setTimeout (fn [] (. res (send "ClojureScript!"))) 1000))))
   (. app (get "/query" query))
+  (. app (get "/sse" sse))
   (. app (get "/fact/:number" factorial))
   (. app (listen server-port (fn [] (println (gstring/format "Server is running on port %d" server-port))))))
 
