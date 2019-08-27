@@ -1,6 +1,6 @@
 (defproject node-clj "0.1.0-SNAPSHOT"
-  :description "FIXME: write this!"
-  :url "http://example.com/FIXME"
+  :description "Nodejs ClojureScript"
+  :url "https://github.com/hoangpq/node-clojurescript-app"
 
   :min-lein-version "2.7.1"
 
@@ -27,7 +27,7 @@
                 :output-dir "target/js/compiled/dev"
                 :target :nodejs
                 :optimizations :none
-                :source-map-timestamp true}}
+                :source-map true}}
              {:id "prod"
               :source-paths ["src"]
               :compiler {
@@ -39,6 +39,7 @@
                 :optimize-constants true
                 :hashbang false
                 :parallel-build true
+                :source-map true
                 :pretty-print  false}}]}
 
   :profiles {:dev {:dependencies [[figwheel-sidecar "0.5.13"]

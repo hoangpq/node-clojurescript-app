@@ -40,12 +40,17 @@
     (clj->js {:data (or r [])})))
 
 (defn query [q cb]
-  (go (let [result (<! (async-query q)) e (aget result "error")]
-        (if e (cb (format-error e) nil) (cb nil (format-result result))))))
+  (go
+    (let [result (<! (async-query q)) e (aget result "error")]
+      (if e
+        (cb (format-error e) nil)
+        (cb nil (format-result result))))))
 
 (defn pg-client []
   (let [channel (chan)]
-    (. pool (connect (fn [_ client _] (put! channel client))))
+    (. pool (connect
+             (fn [_ client _]
+               (put! channel client))))
     channel))
 
 (defn pg-listen [channel cb]

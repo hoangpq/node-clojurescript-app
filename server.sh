@@ -1,2 +1,2 @@
 #!/bin/bash
-nodemon ./target/js/compiled/node_clj.js
+nodemon --inspect ./target/js/compiled/node_clj.js
