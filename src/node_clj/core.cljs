@@ -30,10 +30,14 @@
         fact (util/factorial number)]
     (. res (send (gstring/format "Factorial(%d) = %d" number fact)))))
 
+(defn pg-sse []
+  (util/pg-listen "imbus" (fn [msg] (println (aget msg "payload")))))
+
 (defn -main []
   (. app (get "/hello" (fn [_ res] (js/setTimeout (fn [] (. res (send "ClojureScript!"))) 1000))))
   (. app (get "/query" query))
   (. app (get "/sse" sse))
+  (. app (get "/pg/sse" pg-sse))
   (. app (get "/fact/:number" factorial))
   (. app (listen server-port (fn [] (println (gstring/format "Server is running on port %d" server-port))))))
 

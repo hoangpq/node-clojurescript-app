@@ -1,5 +1,6 @@
 (ns node-clj.util
   (:require [cljs.nodejs :as nodejs]
+            [clojure.string :as string]
             [cljs.core.async
              :refer [<! chan put! close! onto-chan to-chan]])
   (:require-macros
@@ -10,9 +11,7 @@
 (defn connect-db []
   (-> {"host"     "localhost"
        "port"     5432
-       "user"     "hoangpq"
-       "password" "hoangpq"
-       "database" "odoo-12"
+       "database" "postgres"
        "ssl"      false}
       (clj->js)
       (pg.Pool.)))
@@ -43,3 +42,13 @@
 (defn query [q cb]
   (go (let [result (<! (async-query q)) e (aget result "error")]
         (if e (cb (format-error e) nil) (cb nil (format-result result))))))
+
+(defn pg-client []
+  (let [channel (chan)]
+    (. pool (connect (fn [_ client _] (put! channel client))))
+    channel))
+
+(defn pg-listen [channel cb]
+  (go (let [client (<! (pg-client))]
+        (. client (on "notification" cb))
+        (. client (query (string/join " " ["LISTEN" channel]) (fn [] {}))))))
