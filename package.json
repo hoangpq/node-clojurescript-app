@@ -2,15 +2,21 @@
   "name": "node-clj",
   "version": "0.1.0",
   "private": true,
+  "scripts": {
+    "copy-assets": "copyfiles resources/public/*.html target/js/compiled/dev/node_clj",
+    "debug": "npm run copy-assets && node --inspect target/js/compiled/node_clj.js"
+  },
   "engines": {
     "node": "10.x"
   },
   "main": "server.js",
   "dependencies": {
     "express": "^4.17.1",
-    "pg": "^7.12.1"
+    "pg": "^7.12.1",
+    "rxjs": "^6.5.2"
   },
   "devDependencies": {
+    "copyfiles": "^2.1.1",
     "source-map-support": "^0.4.15",
     "ws": "^7.1.2"
   }

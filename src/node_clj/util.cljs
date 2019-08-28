@@ -7,10 +7,14 @@
    [cljs.core.async.macros :as m :refer [go]]))
 
 (defonce pg (nodejs/require "pg"))
+(defonce operators (nodejs/require "rxjs/operators"))
+(defonce rxjs (nodejs/require "rxjs"))
 
 (defn connect-db []
   (-> {"host"     "localhost"
        "port"     5432
+       ;; "user"     "odoo"
+       ;; "password" "odoo"
        "database" "postgres"
        "ssl"      false}
       (clj->js)
@@ -56,4 +60,16 @@
 (defn pg-listen [channel cb]
   (go (let [client (<! (pg-client))]
         (. client (on "notification" cb))
-        (. client (query (string/join " " ["LISTEN" channel]) (fn [] {}))))))
+        (. client (query (string/join " " ["LISTEN" channel]) (fn [] ()))))))
+
+(defn create-pg-listener []
+  (let [subject (rxjs.Subject.)]
+    (pg-listen "imbus"
+               (fn [msg]
+                 (. subject (next (aget msg "payload")))))
+    (-> (. subject (asObservable))
+        (. (pipe (operators.share))))))
+
+(defn handler-process-exit [cb]
+  (. nodejs/process
+     (on "SIGINT" cb)))

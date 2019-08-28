@@ -1,26 +1,20 @@
 (ns node-clj.core
   (:require [cljs.nodejs :as nodejs]
-            [goog.string :as gstring]
             [node-clj.util :as util]
+            [node-clj.sse-client :as sse-client]
+            [goog.string :as gstring]
             goog.string.format))
 
 (nodejs/enable-util-print!)
 
+(defonce path (nodejs/require "path"))
 (defonce express (nodejs/require "express"))
 (defonce server-port 3000)
 
-(def app (express))
+(defonce channels (atom #{}))
 
-(defn sse [req res]
-  (. res (set (js-obj "Cache-Control" "no-cache" "Content-Type" "text/event-stream")))
-  (if-not (aget req "count") (aset req "count" 1))
-  (let [time (. js/Date now)]
-    (js/setTimeout (fn []
-                     (doto res
-                       (.write "event: ping\n")
-                       (.write (gstring/format "data: {\"time\": %d}" time))
-                       (.write "\n\n")
-                       (.end))) 4000)))
+(def resource-path (. path (join js/__dirname "resources/public")))
+(def app (express))
 
 (defn query [req res]
   (util/query (aget req "query" "q")
@@ -35,17 +29,35 @@
     (. res
        (send (gstring/format "Factorial(%d) = %d" number fact)))))
 
-(defn pg-sse []
-  (util/pg-listen "imbus"
-                  (fn [msg]
-                    (println (aget msg "payload")))))
+(defn index [_ res]
+  (. res (sendFile (. path (join resource-path "index.html")))))
+
+(defn sse [req res]
+  (let [channel (sse-client/initialize req res)]
+    (swap! channels conj channel)))
 
 (defn -main []
-  (. app (get "/hello" (fn [_ res] (js/setTimeout (fn [] (. res (send "ClojureScript!"))) 1000))))
-  (. app (get "/query" query))
-  (. app (get "/sse" sse))
-  (. app (get "/pg/sse" pg-sse))
-  (. app (get "/fact/:number" factorial))
-  (. app (listen server-port (fn [] (println (gstring/format "Server is running on port %d" server-port))))))
+  (let [listener (util/create-pg-listener)]
+    ;; teardown tcp connection
+    (util/handler-process-exit
+     (fn [] (println "Teardown all TCP connections")
+       (doseq [channel @channels]
+         (sse-client/close channel))))
+
+    ;; listen postgres notification
+    (. listener (subscribe
+                 (fn [message]
+                   (doseq [channel @channels] (sse-client/send channel message)))))
+
+    ;; express routing
+    (. app (get "/" index))
+    (. app (get "/sse" sse))
+    (. app (get "/query" query))
+    (. app (get "/fact/:number" factorial))
+
+    ;; Express server binding to `server port`
+    (. app (listen server-port
+                   (fn []
+                     (println (gstring/format "Server is running on port %d" server-port)))))))
 
 (set! *main-cli-fn* -main)
