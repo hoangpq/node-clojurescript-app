@@ -72,4 +72,7 @@
 
 (defn handler-process-exit [cb]
   (. nodejs/process
-     (on "SIGINT" cb)))
+     (on "SIGINT"
+         (fn []
+           (cb)
+           (. nodejs/process (exit 0))))))
