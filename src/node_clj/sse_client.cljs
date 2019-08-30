@@ -10,21 +10,18 @@
 
 (defn initialize [req res]
   (let [channel {:request req :response res}]
+    (swap! channels conj channel)
     (.setNoDelay req.socket true)
     (doto res
       (.status 200)
       (.set (js-obj "Cache-Control" "no-cache, no-transform"
                     "Content-Type" "text/event-stream"
                     "Connection" "keep-alive"))
-      (.write ":ok\n\n"))
-    (swap! channels conj channel)))
+      (.write ":ok\n\n"))))
 
 (defn send [channel event message]
-  (let [res (channel :response)]
-    (doto res
-      (.write (string/format "event: %s\n" event))
-      (.write (string/format "data: {\"message\": \"%s\"}" message))
-      (.write "\n\n"))))
+  (-> (channel :response)
+      (.write (string/format "event: %s\ndata: {\"message\": \"%s\"}\n\n" event message))))
 
 (defn send-all [event message]
   (doseq [channel @channels]
@@ -49,11 +46,9 @@
   ;; heartbeat
   (js/setInterval
    (fn []
-     (println (count @channels))
      (doseq [channel @channels]
        (try (heartbeat channel)
-            (catch js/Error e
-              (println e)
+            (catch js/Error _
               (close channel))))) 5000))
 
 (defn teardown []

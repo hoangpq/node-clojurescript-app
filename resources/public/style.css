@@ -1,0 +1,66 @@
+body {
+    padding: 0;
+    margin: 0;
+}
+
+ul {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+}
+
+ul li {
+    padding: 10px;
+    border-bottom: 1px solid red;
+}
+
+ul li:nth-child(2n + 1) {
+    background: rgba(255, 0, 0, 0.3);
+}
+
+ul li:nth-child(2n) {
+    background: rgba(0, 0, 255, 0.3);
+}
+
+.wrapper {
+    height: 99vh;
+    padding: 10px;
+}
+
+.container {
+    height: 80vh;
+    overflow: scroll;
+    border: 1px solid green;
+}
+
+.footer {
+    padding: 10px;
+    display: flex;
+    height: 70px;
+    margin-top: 10px;
+    border: 1px solid blue;
+    flex-grow: 1;
+}
+
+.footer .holder01 {
+    flex-grow: 1;
+}
+
+.holder01 textarea {
+    width: 100%;
+    height: 70px;
+    padding: 5px;
+    resize: none;
+    overflow: auto;
+}
+
+.footer .holder02 {
+    display: flex;
+    width: 120px;
+    justify-content: center;
+}
+
+.footer .holder02 button {
+    width: 100px;
+    height: 30px;
+}

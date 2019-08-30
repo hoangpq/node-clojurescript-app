@@ -21,21 +21,11 @@
                   (. res (json result))
                   (. res (json err))))))
 
-(defn factorial [req res]
-  (let [number (int (aget req "params" "number"))
-        fact (util/factorial number)]
-    (. res
-       (send (string/format "Factorial(%d) = %d" number fact)))))
-
 (defn index [_ res]
   (. res (sendFile (. path (join resource-path "index.html")))))
 
 (defn sse [req res]
   (sse-client/initialize req res))
-
-(defn test-fn [x y]
-  {:pre [(not= y 0)]}
-  (/ x y))
 
 (defn div-test [req res]
   (let [params (aget req "params")
@@ -52,22 +42,22 @@
 
 (defn -main []
   (let [listener (util/create-pg-listener)]
-    ;; teardown tcp connection
-    (util/handler-process-exit
-     (fn [] (println "Teardown all TCP connections")
-       (sse-client/teardown)))
-
     ;; listen postgres notification
     (.subscribe listener
                 (fn [message]
-                  (sse-client/send-all "ping" message)))
+                  (sse-client/send-all "imbus" message)))
 
     ;; express routing
     (.get app "/" index)
     (.get app "/sse" sse)
     (.get app "/query" query)
-    (.get app "/test/:x/:y" div-test)
-    (.get app "/fact/:number" factorial)
+
+    (.use app "/static" (.static express resource-path))
+
+    ;; teardown tcp connection
+    (util/handler-process-exit
+     (fn [] (println "Teardown all TCP connections")
+       (sse-client/teardown)))
 
     ;; binding to server port
     (.listen app server-port

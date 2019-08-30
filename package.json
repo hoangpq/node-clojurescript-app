@@ -3,7 +3,7 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
-    "copy-assets": "copyfiles resources/public/*.html target/js/compiled/dev/node_clj",
+    "copy-assets": "copyfiles resources/public/{*.html,*.js,*.css} target/js/compiled/dev/node_clj",
     "debug": "npm run copy-assets && node --inspect target/js/compiled/node_clj.js"
   },
   "engines": {

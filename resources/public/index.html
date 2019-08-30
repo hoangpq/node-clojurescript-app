@@ -4,14 +4,12 @@
     <meta content="width=device-width, user-scalable=no, initial-scale=1.0, maximum-scale=1.0, minimum-scale=1.0"
           name="viewport">
     <meta content="ie=edge" http-equiv="X-UA-Compatible">
-    <title>ClojureScript NodeJs</title>
+    <title>Notification</title>
 </head>
 <body>
-<script type="text/javascript">
-    const ev = new EventSource('/sse');
-    ev.addEventListener('ping', function (evt) {
-        console.log(evt);
-    });
-</script>
+<div id="app"></div>
+<script defer src="static/vue.min.js" type="text/javascript"></script>
+<script defer src="static/index.js" type="text/javascript"></script>
+<link href="static/style.css" rel="stylesheet" type="text/css"/>
 </body>
 </html>
