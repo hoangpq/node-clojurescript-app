@@ -10,3 +10,4 @@
 figwheel_server.log
 pom.xml
 .idea/
+config/
