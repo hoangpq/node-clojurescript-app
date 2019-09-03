@@ -21,7 +21,7 @@
 
 (defn send [channel event message]
   (-> (channel :response)
-      (.write (string/format "event: %s\ndata: {\"message\": \"%s\"}\n\n" event message))))
+      (.write (string/format "event: %s\ndata: %s\n\n" event message))))
 
 (defn send-all [event message]
   (doseq [channel @channels]
@@ -29,7 +29,7 @@
 
 (defn close [channel]
   (let [res (channel :response)]
-    (. res (end))
+    (.end res)
     (swap! channels disj channel)))
 
 (defn alive? [channel]

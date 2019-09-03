@@ -1,0 +1,16 @@
+{
+  "db": {
+    "host": "localhost",
+    "port": 5432,
+    "password": "",
+    "database": "",
+    "ssl": false
+  },
+  "rpc": {
+    "host": "localhost",
+    "port": 8069,
+    "database": "",
+    "username": "",
+    "password": ""
+  }
+}

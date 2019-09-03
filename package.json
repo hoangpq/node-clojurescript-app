@@ -3,7 +3,8 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
-    "copy-assets": "copyfiles resources/public/{*.html,*.js,*.css} target/js/compiled/dev/node_clj",
+    "copy-assets": "copyfiles resources/**/{*.html,*.js,*.css,*.json} target/js/compiled/dev/node_clj",
+    "dev": "npm run copy-assets && nodemon target/js/compiled/node_clj.js",
     "debug": "npm run copy-assets && node --inspect target/js/compiled/node_clj.js"
   },
   "engines": {
@@ -12,6 +13,8 @@
   "main": "server.js",
   "dependencies": {
     "express": "^4.17.1",
+    "js-yaml": "^3.13.1",
+    "node-odoo": "git+https://github.com/hoangpq/node-odoo.git",
     "pg": "^7.12.1",
     "rxjs": "^6.5.2",
     "uuid": "^3.3.3"

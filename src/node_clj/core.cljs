@@ -2,43 +2,45 @@
   (:require [cljs.nodejs :as nodejs]
             [node-clj.util :as util]
             [node-clj.sse-client :as sse-client]
+            [node-clj.path :as path]
+            [node-clj.config :as config]
             [goog.string :as string]
             goog.string.format))
 
 (nodejs/enable-util-print!)
 
-(defonce path (nodejs/require "path"))
 (defonce express (nodejs/require "express"))
 (defonce server-port 9000)
 
-(def resource-path (. path (join js/__dirname "resources/public")))
 (def app (express))
 
+(defn db-query [q res]
+  {:pre [(or
+          (not (clojure.string/blank? q))
+          (throw (js/Error. "Query string is required")))]}
+  (util/query q (fn [error result]
+                  (if-not error
+                    (.json res result)
+                    (.json res (util/format-error error))))))
+
 (defn query [req res]
-  (util/query (aget req "query" "q")
-              (fn [err result]
-                (if-not err
-                  (. res (json result))
-                  (. res (json err))))))
+  (let [q (aget req "query" "q")]
+    (try (db-query q res)
+         (catch js/Error error
+           (.json res (util/format-error error))))))
 
 (defn index [_ res]
-  (. res (sendFile (. path (join resource-path "index.html")))))
+  (.sendFile res (path/resource "index.html")))
 
 (defn sse [req res]
   (sse-client/initialize req res))
 
-(defn div-test [req res]
+(defn message [req res]
   (let [params (aget req "params")
-        x (int (aget params "x"))
-        y (int (aget params "y"))]
-    (try
-      ;; try
-      (->> (js-obj "data" (test-fn x y))
-           (.json res))
-      ;; catch
-      (catch js/Error _
-        (->> (js-obj "message" "Divide by zero!")
-             (.json res))))))
+        channel-id (int (aget params "channel"))
+        message (aget params "message")]
+    (util/message_post channel-id message
+                       (fn [] (.send res "Done!!")))))
 
 (defn -main []
   (let [listener (util/create-pg-listener)]
@@ -51,8 +53,10 @@
     (.get app "/" index)
     (.get app "/sse" sse)
     (.get app "/query" query)
+    (.get app "/message/:channel/:message" message)
 
-    (.use app "/static" (.static express resource-path))
+    ;; static assets
+    (.use app "/static" (.static express (path/resource)))
 
     ;; teardown tcp connection
     (util/handler-process-exit

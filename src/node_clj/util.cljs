@@ -1,5 +1,6 @@
 (ns node-clj.util
   (:require [cljs.nodejs :as nodejs]
+            [node-clj.config :as config]
             [clojure.string :as string]
             [cljs.core.async
              :refer [<! chan put! close! onto-chan to-chan]])
@@ -9,32 +10,47 @@
 (defonce pg (nodejs/require "pg"))
 (defonce operators (nodejs/require "rxjs/operators"))
 (defonce rxjs (nodejs/require "rxjs"))
+(defonce Odoo (nodejs/require "node-odoo"))
+
+(defn get-config []
+  (let [config (config/loadConfig)
+        get (partial aget config)]
+    (fn [& args] (apply get args))))
+
+(defonce jsConfig (get-config))
 
 (defn connect-db []
-  (-> {"host"     "localhost"
-       "port"     5432
-       ;; "user"     "odoo"
-       ;; "password" "odoo"
-       "database" "postgres"
-       "ssl"      false}
-      (clj->js)
-      (pg.Pool.)))
+  (pg.Pool. (jsConfig "db")))
+
+(defn create-odoo-instance []
+  (Odoo. (jsConfig "rpc")))
+
+(defn connect-odoo [odoo cb]
+  (.connect odoo
+            (fn [error]
+              (if error (throw error) (cb odoo)))))
+
+(defn connected? [instance]
+  (true? (.isConnected instance)))
+
+(defn connect-odoo-async []
+  (let [odoo (create-odoo-instance)]
+    (fn [cb]
+      (if
+       (connected? odoo)
+        (cb odoo) (connect-odoo odoo cb)))))
 
 (def pool (connect-db))
+;; connect to Odoo RPC
+(def odoo (connect-odoo-async))
 
 (defn async-query [q]
   (let [channel (chan)]
-    (. pool (query q (fn [err result]
-                       (if err
-                         (put! channel (js-obj "error" err))
-                         (put! channel result)))))
+    (.query pool q (fn [error result]
+                     (if error
+                       (put! channel (js-obj "error" error))
+                       (put! channel result))))
     channel))
-
-(defn factorial [n]
-  (loop [current n fact 1]
-    (if (= current 1)
-      fact
-      (recur (dec current) (* fact current)))))
 
 (defn format-error [e]
   (clj->js {:error 1 :message (aget e "message")}))
@@ -45,34 +61,41 @@
 
 (defn query [q cb]
   (go
-    (let [result (<! (async-query q)) e (aget result "error")]
-      (if e
-        (cb (format-error e) nil)
+    (let [result (<! (async-query q))
+          error (aget result "error")]
+      (if error
+        (cb (format-error error) nil)
         (cb nil (format-result result))))))
+
+(defn message_post [channel-id message cb]
+  (odoo
+   (fn [instance]
+     (.message_post instance channel-id message cb))))
 
 (defn pg-client []
   (let [channel (chan)]
-    (. pool (connect
-             (fn [_ client _]
-               (put! channel client))))
+    (.connect pool (fn [_ client _]
+                     (put! channel client)))
     channel))
 
 (defn pg-listen [channel cb]
   (go (let [client (<! (pg-client))]
-        (. client (on "notification" cb))
-        (. client (query (string/join " " ["LISTEN" channel]) (fn [] ()))))))
+        (.on client "notification" cb)
+        (.query client
+                (string/join " " ["LISTEN" channel])
+                (fn [] ())))))
 
 (defn create-pg-listener []
   (let [subject (rxjs.Subject.)]
-    (pg-listen "imbus"
+    (pg-listen "im_events"
                (fn [msg]
-                 (. subject (next (aget msg "payload")))))
-    (-> (. subject (asObservable))
-        (. (pipe (operators.share))))))
+                 (.next subject (aget msg "payload"))))
+    (-> (.asObservable subject)
+        (.pipe (operators.share)))))
 
 (defn handler-process-exit [cb]
   (. nodejs/process
      (on "SIGINT"
          (fn []
            (cb)
-           (. nodejs/process (exit 0))))))
+           (.exit nodejs/process 0)))))

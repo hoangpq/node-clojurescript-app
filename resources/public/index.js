@@ -1,11 +1,11 @@
 new Vue({
-    el: '#app',
-    template: `
+  el: '#app',
+  template: `
         <div class="wrapper">
             <div class="container">
                 <ul>
                     <li v-for="message in messages">
-                        {{ message }}
+                        <span v-if="message.data.body" v-html="message.data.body"/>
                     </li>
                 </ul>
             </div>
@@ -20,27 +20,32 @@ new Vue({
         </div>
         
     `,
-    data: {
-        messages: [],
-        input: '',
+  data: {
+    messages: [],
+    input: '',
+  },
+  methods: {
+    notification(evt) {
+      if (this.messages.length > 10) {
+        this.messages.length = 0;
+      }
+      let message;
+      try {
+        message = JSON.parse(evt.data);
+      } catch (e) {
+        message = {};
+      }
+      this.messages.push(message);
     },
-    methods: {
-        notification(evt) {
-            if (this.messages.length > 10) {
-                this.messages.length = 0;
-            }
-            try {
-                this.messages.push(JSON.parse(evt.data));
-            } catch (e) {
-                this.messages.push(evt.data);
-            }
-        },
-        sendMessage() {
-            console.log(this.input);
-        }
-    },
-    created() {
-        this.ev = new EventSource('/sse');
-        this.ev.addEventListener('imbus', this.notification.bind(this));
+    sendMessage() {
+      fetch(`/message/1/${this.input}`)
+        .then(function() {
+          console.log(`Send message successfully!`);
+        });
     }
+  },
+  created() {
+    this.ev = new EventSource('/sse');
+    this.ev.addEventListener('imbus', this.notification.bind(this));
+  }
 });
