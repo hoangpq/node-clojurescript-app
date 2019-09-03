@@ -6,7 +6,6 @@
 (nodejs/enable-util-print!)
 
 (defonce channels (atom #{}))
-(declare close)
 
 (defn initialize [req res]
   (let [channel {:request req :response res}]

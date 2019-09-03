@@ -17,13 +17,16 @@
         get (partial aget config)]
     (fn [& args] (apply get args))))
 
-(defonce jsConfig (get-config))
+(defonce js-config (get-config))
 
 (defn connect-db []
-  (pg.Pool. (jsConfig "db")))
+  (pg.Pool. (js-config "db")))
+
+;; connect to Postgres DB
+(def pool (connect-db))
 
 (defn create-odoo-instance []
-  (Odoo. (jsConfig "rpc")))
+  (Odoo. (js-config "rpc")))
 
 (defn connect-odoo [odoo cb]
   (.connect odoo
@@ -40,7 +43,6 @@
        (connected? odoo)
         (cb odoo) (connect-odoo odoo cb)))))
 
-(def pool (connect-db))
 ;; connect to Odoo RPC
 (def odoo (connect-odoo-async))
 
