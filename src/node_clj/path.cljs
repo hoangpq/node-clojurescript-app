@@ -6,5 +6,5 @@
 (defonce path (nodejs/require "path"))
 
 (defn resource [& args]
-  (let [root (.join path js/__dirname "resources/public")]
-    (apply path.join (conj args root))))
+  (let [path-join (partial path.join js/__dirname "resources/public")]
+    (apply path-join args)))
