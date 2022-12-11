@@ -12,7 +12,7 @@
   },
   "main": "server.js",
   "dependencies": {
-    "express": "^4.17.1",
+    "express": "^4.17.3",
     "js-yaml": "^3.13.1",
     "node-odoo": "git+https://github.com/hoangpq/node-odoo.git",
     "pg": "^7.12.1",
